@@ -1,0 +1,128 @@
+struct Node
+{
+    long long val;
+    long long lazy;
+    bool is_lazy;
+
+    Node()
+    {
+        // update this variable to a value that has no effect on the answer of the operation
+        val = 1e10;
+        lazy = 0;
+        is_lazy = 0;
+    }
+
+    Node(int x)
+    {
+        val = x;
+        is_lazy = 0;
+        lazy = 0;
+    }
+
+    // write here the logic you want to happen when you add an update query to a node
+    void add(int x)
+    {
+        val = x;
+        lazy = x;
+        is_lazy = 1;
+    }
+};
+
+struct SegTree
+{
+    int tree_size;
+    vector<Node> seg_data;
+    SegTree(int n)
+    {
+        tree_size = 1;
+        while (tree_size < n) tree_size *= 2;
+        seg_data.resize(2 * tree_size, Node());
+    }
+
+    // update this function for the desired operation
+    Node merge(Node & lf, Node & ri)
+    {
+        Node ans = Node();
+        ans.val = min(lf.val, ri.val);
+        return ans;
+    }
+
+    void init(vector<long long> & nums, int ni, int lx, int rx) {
+
+        if(rx - lx == 1)
+        {
+            if(lx < sz(nums))
+            {
+                seg_data[ni] = Node(nums[lx]);
+            }
+            return;
+        }
+
+        int mid = lx + (rx - lx) / 2;
+        init(nums, 2 * ni + 1, lx, mid);
+        init(nums, 2 * ni + 2, mid, rx);
+
+        seg_data[ni] = merge(seg_data[2 * ni + 1], seg_data[2 * ni + 2]);
+    }
+
+    void init(vector<int> & nums)
+    {
+        init(nums, 0, 0, tree_size);
+    }
+
+    void propagete(int ni, int lx, int rx)
+    {
+        if(rx - lx == 1 || seg_data[ni].is_lazy == 0)
+            return;
+
+        seg_data[ 2 * ni + 1].add(seg_data[ni].lazy);
+        seg_data[ 2 * ni + 2].add(seg_data[ni].lazy);
+
+        seg_data[ni].is_lazy = 0;
+        seg_data[ni].lazy = 0;
+    }
+
+    void set(int l, int r, long long value, int node, int lx, int rx)
+    {
+        propagete(node, lx, rx);
+
+        if(lx >= l && rx <= r)
+        {
+            seg_data[node].add(value);
+            return;
+        }
+        if(rx <= l || lx >= r)
+            return;
+
+        int mid = lx + (rx - lx) / 2;
+        set(l, r, value, 2 * node + 1, lx, mid);
+        set(l, r, value, 2 * node + 2, mid, rx);
+
+        seg_data[node] = merge(seg_data[2 * node + 1], seg_data[2 * node + 2]);
+    }
+    void set(int l, int r, long long value) // // zero indexed range and set from l to r-1, i.e [l,r)
+    {
+        set(l, r, value, 0, 0, tree_size);
+    }
+
+    Node get_range(int l, int r, int node, int lx, int rx)
+    {
+        propagete(node, lx, rx);
+
+        if(lx >= l && rx <= r)
+            return seg_data[node];
+        if(rx <= l || lx >= r)
+            return Node();
+
+        int mid = (lx + rx) / 2;
+
+        Node lf = get_range(l, r, 2 * node + 1, lx, mid);
+        Node ri = get_range(l, r, 2 * node + 2, mid, rx);
+        return merge(lf, ri);
+    }
+
+    long long get_range(int l, int r) // zero indexed range and get from l to r-1, i.e [l,r)
+    {
+        return get_range(l, r, 0, 0, tree_size).val;
+    }
+};

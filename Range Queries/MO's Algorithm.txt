@@ -1,0 +1,84 @@
+vector<long long> queries_ans;
+vector<long long> arr;
+
+// n number of array elements, m number of queries
+int n, m;
+// sqrt(n);
+int sq;
+
+struct q_data
+{
+    int id;
+    int block_id;
+    int l;
+    int r;
+
+    q_data(){};
+    q_data(int _l, int _r, int _id)
+    {
+        id = _id;
+        r = _r - 1;
+        l = _l - 1;
+        block_id = _l / sq;
+    }
+
+    bool operator <(const q_data & A) const
+    {
+        if(A.block_id == block_id) return r < A.r;
+        return block_id < A.block_id;
+    }
+};
+
+vector<q_data> queries;
+
+// store in this variable the current query answer
+long long ans = 0; // a neutral value as initial;
+
+void add(int ind)
+{
+    // write here the logic you want to happen if you add an element to the range
+}
+void remove(int ind)
+{
+    // write here the logic you want to happen if you remove an element from the range
+}
+
+
+// this code in [solve function] is fixed don't change just edit the add and remove functions
+void solve()
+{
+    cin >> n >> m;
+    sq = sqrt(n);
+
+    arr.resize(n);
+
+    queries.resize(m);
+    queries_ans.resize(m);
+
+    for (int i = 0; i < n; ++i) {
+        cin >> arr[i];
+    }
+
+    // send them 1-indexed
+    for (int i = 0; i < m; ++i) {
+        int l, r; cin >> l >> r;
+        queries[i] = q_data(l, r, i);
+    }
+    sort(queries.begin(), queries.end());
+
+    int l0 = queries[0].l, r0 = queries[0].l;
+    add(l0);
+
+    loop(m)
+    {
+        while (queries[i].l > l0) remove(l0++);
+        while (queries[i].l < l0) add(--l0);
+        while (queries[i].r > r0) add(++r0);
+        while (queries[i].r < r0) remove(r0--);
+        queries_ans[queries[i].id] = ans;
+    }
+
+    for (int i = 0; i < m; ++i) {
+        cout << queries_ans[i] << endl;
+    }
+}

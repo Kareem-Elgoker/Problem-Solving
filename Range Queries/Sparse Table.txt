@@ -1,0 +1,62 @@
+vector<vector<long long >> sparse_table;
+vector<int> LOG;
+
+// update this variable to a value that has no effect on the answer of the operation
+long long neutral = 1e15;
+
+// update this function for the desired operation
+long long merge(long long val1, long long val2)
+{
+    return min(val1, val2);
+}
+
+void build(vector<long long> & arr)
+{
+    int n = arr.size();
+    LOG.resize(n + 1);
+
+    for (int i = 1; i <= n; ++i) {
+        LOG[i] = __lg(i);
+    }
+
+    sparse_table.assign(LOG[n] + 1, vector<int>(n));
+
+    sparse_table[0] = arr;
+
+    for (int i = 1; i <= LOG[n]; ++i) {
+        int len = 1 << (i - 1);
+        for (int j = 0; j + 2 * len <= n; ++j) {
+            sparse_table[i][j] = merge(sparse_table[i - 1][j], sparse_table[i - 1][j + len]);
+        }
+    }
+}
+
+// use this as a general case but a bit slower
+long long query(int l, int r) // 0 indexed range, O(log(N))
+{
+    int len = r - l + 1;
+    int cnt = 0;
+
+    int ans = neutral;
+    while (len)
+    {
+        if(len & 1)
+        {
+            ans = merge(ans, sparse_table[cnt][l]);
+            l += 1 << cnt;
+        }
+        len >>= 1;
+        cnt++;
+    }
+
+    return ans;
+}
+
+// use this for [min, max, or ,and, gcd, lcm] in O(1) time
+long long query_overlap(int l, int r) // 0 indexed range, fast O(1) -> but must [(x op x) = x].
+{
+    int len = r - l + 1;
+    int row = LOG[len];
+
+    return merge(sparse_table[row][l], sparse_table[row][r - (1 << row) + 1]);
+}

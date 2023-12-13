@@ -1,0 +1,84 @@
+struct SegTree
+{
+    int tree_size;
+    vector<vector<int>> seg_data;
+    SegTree(int n)
+    {
+        tree_size = 1;
+        while (tree_size < n) tree_size *= 2;
+        seg_data.resize(2 * tree_size, vector<int>());
+    }
+    void merge(int ni, int lf, int ri)
+    {
+        seg_data[ni] = seg_data[lf];
+        for (int i = 0; i < sz(seg_data[ri]); ++i) {
+            seg_data[ni].push_back(seg_data[ri][i]);
+        }
+        sort(all(seg_data[ni]));
+    }
+
+    void init(vector<int> & nums, int ni, int lx, int rx)
+    {
+        if(rx - lx == 1)
+        {
+            if(lx < sz(nums))
+                seg_data[ni].push_back(nums[lx]);
+            return;
+        }
+
+        int mid = lx + (rx - lx) / 2;
+        init(nums, 2 * ni + 1, lx, mid);
+        init(nums, 2 * ni + 2, mid, rx);
+
+        merge(ni, 2 * ni + 1, 2 * ni + 2);
+    }
+    void init(vector<int> & nums)
+    {
+        init(nums, 0, 0, tree_size);
+    }
+
+    int equal(int l, int r, int x, int ni, int lx, int rx)
+    {
+        if(lx >= l && rx <= r)
+        {
+            return upper_bound(all(seg_data[ni]), x) - lower_bound(all(seg_data[ni]), x);
+        }
+        if(lx >= r || rx <= l)
+            return 0;
+
+        int mid = lx + (rx - lx) / 2;
+        int ans = equal(l, r, x, 2 * ni + 1, lx, mid);
+        ans += equal(l, r, x, 2* ni + 2, mid, rx);
+
+        return ans;
+    }
+    int equal(int l, int r, int x) // zero indexed range and get from l to r-1, i.e [l,r)
+    {
+        return equal(l, r, x, 0, 0, tree_size);
+    }
+
+    int less_than(int l, int r, int x, int ni, int lx, int rx)
+    {
+        if(lx >= l && rx <= r)
+        {
+            return lower_bound(all(seg_data[ni]), x) - seg_data[ni].begin();
+        }
+        if(lx >= r || rx <= l)
+            return 0;
+
+        int mid = lx + (rx - lx) / 2;
+        int ans = less_than(l, r, x, 2 * ni + 1, lx, mid);
+        ans += less_than(l, r, x, 2* ni + 2, mid, rx);
+
+        return ans;
+    }
+    int less_than(int l, int r, int x) // zero indexed range and get from l to r-1, i.e [l,r)
+    {
+        return less_than(l, r, x, 0, 0, tree_size);
+    }
+
+    int greater_than(int l, int r, int v)  // zero indexed range and get from l to r-1, i.e [l,r)
+    {
+        return (r - l) - less_than(l, r, v) - equal(l, r, v);
+    }
+};
