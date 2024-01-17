@@ -44,7 +44,7 @@ void remove(int ind)
 }
 
 
-// this code in [solve function] is fixed don't change just edit the add and remove functions
+// this code in [solve function] is fixed don't change it, just edit the add and remove functions
 void solve()
 {
     cin >> n >> m;
