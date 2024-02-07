@@ -37,7 +37,7 @@ struct SegTree
 
         if(rx - lx == 1)
         {
-            if(lx < sz(nums))
+            if(lx < (int)nums.size())
             {
                 seg_data[ni] = Node(nums[lx]);
             }
