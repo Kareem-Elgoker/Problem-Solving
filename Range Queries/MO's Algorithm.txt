@@ -69,8 +69,7 @@ void solve()
     int l0 = queries[0].l, r0 = queries[0].l;
     add(l0);
 
-    loop(m)
-    {
+    for (int i = 0; i < m; ++i) {
         while (queries[i].l > l0) remove(l0++);
         while (queries[i].l < l0) add(--l0);
         while (queries[i].r > r0) add(++r0);
