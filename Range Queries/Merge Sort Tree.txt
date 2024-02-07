@@ -11,7 +11,7 @@ struct SegTree
     void merge(int ni, int lf, int ri)
     {
         seg_data[ni] = seg_data[lf];
-        for (int i = 0; i < sz(seg_data[ri]); ++i) {
+        for (int i = 0; i < (int)seg_data[ri].size(); ++i) {
             seg_data[ni].push_back(seg_data[ri][i]);
         }
         sort(all(seg_data[ni]));
@@ -21,7 +21,7 @@ struct SegTree
     {
         if(rx - lx == 1)
         {
-            if(lx < sz(nums))
+            if(lx < (int)nums.size())
                 seg_data[ni].push_back(nums[lx]);
             return;
         }
