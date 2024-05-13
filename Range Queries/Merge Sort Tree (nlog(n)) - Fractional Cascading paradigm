@@ -1,66 +1,64 @@
-struct Node
-{
-    vector<int> data;
-    vector<int> lf_pos, ri_pos;
-
-    Node()
-    {
-        data.clear();
-        lf_pos.clear();
-        ri_pos.clear();
-
-        // change this value upon your operation
-        data.push_back(2e9);
-    }
-};
-
 struct MergeSortTree
 {
     int tree_size;
-    vector<Node> seg_data;
+
+    // change the data type suitable for the problem only for the seg_data vector
+    vector<vector<int>> seg_data;
+    vector<vector<int>> seg_data_lf;
+    vector<vector<int>> seg_data_ri;
+
     MergeSortTree(int n)
     {
         tree_size = 1;
         while (tree_size < n) tree_size *= 2;
-        seg_data.resize(2 * tree_size, Node());
-    }
-    void merge(Node &lf, Node &ri, Node& ans)
-    {
-        ans.data.assign(2 * (int)lf.data.size(), 0);
-        ans.lf_pos.assign(2 * (int)lf.data.size(), 0);
-        ans.ri_pos.assign(2 * (int)lf.data.size(), 0);
 
-        int i = 0, j = 0, k = 0;
-        while (k < ans.data.size())
+        seg_data.assign(2 * tree_size, {});
+        seg_data_lf.assign(2 * tree_size, {});
+        seg_data_ri.assign(2 * tree_size, {});
+    }
+
+    void merge(int ni, int lf, int ri)
+    {
+        int l = 0, r = 0, k = 0;
+        int n = seg_data[lf].size();
+        int m = seg_data[ri].size();
+
+        seg_data[ni].assign(n + m, 0);
+        seg_data_lf[ni].assign(n + m, 0);
+        seg_data_ri[ni].assign(n + m, 0);
+
+        while(l < n && r < m)
         {
-            if(i < (int)lf.data.size() && j < (int)ri.data.size() && lf.data[i] <= ri.data[j])
+            if(seg_data[lf][l] < seg_data[ri][r])
             {
-                ans.data[k] = lf.data[i];
-                ans.lf_pos[k] = i;
-                ans.ri_pos[k] = j - 1;
-                ++i;
-            }
-            else if(i < (int)lf.data.size() && j < (int)ri.data.size() && lf.data[i] > ri.data[j])
-            {
-                ans.data[k] = ri.data[j];
-                ans.lf_pos[k] = i - 1;
-                ans.ri_pos[k] = j;
-                ++j;
-            }
-            else if(i < (int)lf.data.size())
-            {
-                ans.data[k] = lf.data[i];
-                ans.lf_pos[k] = i;
-                ans.ri_pos[k] = j - 1;
-                ++i;
+                seg_data_lf[ni][k] = l;
+                seg_data_ri[ni][k] = r - 1;
+                seg_data[ni][k] = seg_data[lf][l];
+                ++k;
+                ++l;
             }
             else
             {
-                ans.data[k] = ri.data[j];
-                ans.lf_pos[k] = i - 1;
-                ans.ri_pos[k] = j;
-                ++j;
+                seg_data_lf[ni][k] = l - 1;
+                seg_data_ri[ni][k] = r;
+                seg_data[ni][k] = seg_data[ri][r];
+                ++r;
+                ++k;
             }
+        }
+
+        while(l < n) {
+            seg_data_lf[ni][k] = l;
+            seg_data_ri[ni][k] = r - 1;
+            seg_data[ni][k] = seg_data[lf][l];
+            ++k;
+            ++l;
+        }
+        while(r < m) {
+            seg_data_lf[ni][k] = l - 1;
+            seg_data_ri[ni][k] = r;
+            seg_data[ni][k] = seg_data[ri][r];
+            ++r;
             ++k;
         }
     }
@@ -70,7 +68,7 @@ struct MergeSortTree
         if(rx - lx == 1)
         {
             if(lx < sz(nums))
-                seg_data[ni].data[0] = nums[lx];
+                seg_data[ni] = {nums[lx]};
             return;
         }
 
@@ -78,7 +76,7 @@ struct MergeSortTree
         init(nums, 2 * ni + 1, lx, mid);
         init(nums, 2 * ni + 2, mid, rx);
 
-        merge(seg_data[2 * ni + 1], seg_data[2 * ni + 2], seg_data[ni]);
+        merge(ni, 2 * ni + 1, 2 * ni + 2);
     }
     void init(vector<int> & nums)
     {
@@ -99,21 +97,29 @@ struct MergeSortTree
 
         int mid = lx + (rx - lx) / 2;
 
-        int ans = less_equal(l, r, 2 * ni + 1, lx, mid, seg_data[ni].lf_pos[pos]);
-        ans += less_equal(l, r, 2 * ni + 2, mid, rx, seg_data[ni].ri_pos[pos]);
+        int ans = less_equal(l, r, 2 * ni + 1, lx, mid, seg_data_lf[ni][pos]);
+        ans += less_equal(l, r, 2 * ni + 2, mid, rx, seg_data_ri[ni][pos]);
 
         return ans;
     }
 
-    int less_equal(int l, int r, int x) // zero indexed range and get from l to r-1, i.e [l,r)
+
+    // any query is zero indexed range and get the answer from l to r-1, i.e [l,r)
+
+    int less_equal(int l, int r, int x)
     {
-        auto it = upper_bound(all(seg_data[0].data), x);
+        auto it = upper_bound(seg_data[0].begin(), seg_data[0].end(), x);
         int ans = 0;
-        if(it != seg_data[0].data.begin()) {
+        if(it != seg_data[0].begin()) {
             --it;
-            ans = less_equal(l, r, 0, 0, tree_size, it - seg_data[0].data.begin());
+            ans = less_equal(l, r, 0, 0, tree_size, it - seg_data[0].begin());
         }
         return ans;
+    }
+
+    int less(int l, int r, int x)
+    {
+        return less_equal(l, r, x - 1);
     }
 
     int equal(int l, int r, int x)
@@ -121,11 +127,6 @@ struct MergeSortTree
         int ans = less_equal(l, r, x);
         ans -= less_equal(l, r, x - 1);
         return ans;
-    }
-
-    int less(int l, int r, int x)
-    {
-        return less_equal(l, r, x - 1);
     }
 
     int greater(int l, int r, int x)
