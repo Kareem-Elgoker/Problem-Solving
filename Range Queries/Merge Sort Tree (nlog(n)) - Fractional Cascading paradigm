@@ -1,0 +1,140 @@
+struct Node
+{
+    vector<int> data;
+    vector<int> lf_pos, ri_pos;
+
+    Node()
+    {
+        data.clear();
+        lf_pos.clear();
+        ri_pos.clear();
+
+        // change this value upon your operation
+        data.push_back(2e9);
+    }
+};
+
+struct MergeSortTree
+{
+    int tree_size;
+    vector<Node> seg_data;
+    MergeSortTree(int n)
+    {
+        tree_size = 1;
+        while (tree_size < n) tree_size *= 2;
+        seg_data.resize(2 * tree_size, Node());
+    }
+    void merge(Node &lf, Node &ri, Node& ans)
+    {
+        ans.data.assign(2 * (int)lf.data.size(), 0);
+        ans.lf_pos.assign(2 * (int)lf.data.size(), 0);
+        ans.ri_pos.assign(2 * (int)lf.data.size(), 0);
+
+        int i = 0, j = 0, k = 0;
+        while (k < ans.data.size())
+        {
+            if(i < (int)lf.data.size() && j < (int)ri.data.size() && lf.data[i] <= ri.data[j])
+            {
+                ans.data[k] = lf.data[i];
+                ans.lf_pos[k] = i;
+                ans.ri_pos[k] = j - 1;
+                ++i;
+            }
+            else if(i < (int)lf.data.size() && j < (int)ri.data.size() && lf.data[i] > ri.data[j])
+            {
+                ans.data[k] = ri.data[j];
+                ans.lf_pos[k] = i - 1;
+                ans.ri_pos[k] = j;
+                ++j;
+            }
+            else if(i < (int)lf.data.size())
+            {
+                ans.data[k] = lf.data[i];
+                ans.lf_pos[k] = i;
+                ans.ri_pos[k] = j - 1;
+                ++i;
+            }
+            else
+            {
+                ans.data[k] = ri.data[j];
+                ans.lf_pos[k] = i - 1;
+                ans.ri_pos[k] = j;
+                ++j;
+            }
+            ++k;
+        }
+    }
+
+    void init(vector<int> & nums, int ni, int lx, int rx)
+    {
+        if(rx - lx == 1)
+        {
+            if(lx < sz(nums))
+                seg_data[ni].data[0] = nums[lx];
+            return;
+        }
+
+        int mid = lx + (rx - lx) / 2;
+        init(nums, 2 * ni + 1, lx, mid);
+        init(nums, 2 * ni + 2, mid, rx);
+
+        merge(seg_data[2 * ni + 1], seg_data[2 * ni + 2], seg_data[ni]);
+    }
+    void init(vector<int> & nums)
+    {
+        init(nums, 0, 0, tree_size);
+    }
+
+    int less_equal(int l, int r, int ni, int lx, int rx, int pos)
+    {
+        if(pos == -1)
+            return 0;
+
+        if(lx >= l && rx <= r)
+        {
+            return pos + 1;
+        }
+        if(lx >= r || rx <= l)
+            return 0;
+
+        int mid = lx + (rx - lx) / 2;
+
+        int ans = less_equal(l, r, 2 * ni + 1, lx, mid, seg_data[ni].lf_pos[pos]);
+        ans += less_equal(l, r, 2 * ni + 2, mid, rx, seg_data[ni].ri_pos[pos]);
+
+        return ans;
+    }
+
+    int less_equal(int l, int r, int x) // zero indexed range and get from l to r-1, i.e [l,r)
+    {
+        auto it = upper_bound(all(seg_data[0].data), x);
+        int ans = 0;
+        if(it != seg_data[0].data.begin()) {
+            --it;
+            ans = less_equal(l, r, 0, 0, tree_size, it - seg_data[0].data.begin());
+        }
+        return ans;
+    }
+
+    int equal(int l, int r, int x)
+    {
+        int ans = less_equal(l, r, x);
+        ans -= less_equal(l, r, x - 1);
+        return ans;
+    }
+
+    int less(int l, int r, int x)
+    {
+        return less_equal(l, r, x - 1);
+    }
+
+    int greater(int l, int r, int x)
+    {
+        return (r - l) - less_equal(l, r, x);
+    }
+
+    int greater_equal(int l, int r, int x)
+    {
+        return (r - l) - less_equal(l, r, x - 1);
+    }
+};
