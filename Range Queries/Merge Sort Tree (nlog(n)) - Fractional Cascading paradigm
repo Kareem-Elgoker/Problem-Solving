@@ -2,81 +2,48 @@ struct MergeSortTree
 {
     int tree_size;
 
-    // change the data type suitable for the problem only for the seg_data vector
-    vector<vector<int>> seg_data;
-    vector<vector<int>> seg_data_lf;
-    vector<vector<int>> seg_data_ri;
+    // change the data type suitable for the problem only for the seg_data.first
+    vector<vector<pair<int, pair<int, int>>>> seg_data;
 
     MergeSortTree(int n)
     {
         tree_size = 1;
-        while (tree_size < n) tree_size *= 2;
-
-        seg_data.assign(2 * tree_size, {});
-        seg_data_lf.assign(2 * tree_size, {});
-        seg_data_ri.assign(2 * tree_size, {});
+        while (tree_size < n) tree_size <<= 1;
+        seg_data.resize(tree_size << 1);
     }
 
     void merge(int ni, int lf, int ri)
     {
-        int l = 0, r = 0, k = 0;
-        int n = seg_data[lf].size();
-        int m = seg_data[ri].size();
+        int l = 0, r = 0, n = seg_data[lf].size(), m = seg_data[ri].size(), k = 0;
+        seg_data[ni].resize(n + m);
 
-        seg_data[ni].assign(n + m, 0);
-        seg_data_lf[ni].assign(n + m, 0);
-        seg_data_ri[ni].assign(n + m, 0);
-
-        while(l < n && r < m)
-        {
-            if(seg_data[lf][l] < seg_data[ri][r])
-            {
-                seg_data_lf[ni][k] = l;
-                seg_data_ri[ni][k] = r - 1;
-                seg_data[ni][k] = seg_data[lf][l];
-                ++k;
-                ++l;
-            }
+        while(l < n && r < m) {
+            if(seg_data[lf][l].first < seg_data[ri][r].first)
+                seg_data[ni][k++] = {seg_data[lf][l].first, {l++, r - 1}};
             else
-            {
-                seg_data_lf[ni][k] = l - 1;
-                seg_data_ri[ni][k] = r;
-                seg_data[ni][k] = seg_data[ri][r];
-                ++r;
-                ++k;
-            }
+                seg_data[ni][k++] = {seg_data[ri][r].first, {l - 1, r++}};
         }
 
-        while(l < n) {
-            seg_data_lf[ni][k] = l;
-            seg_data_ri[ni][k] = r - 1;
-            seg_data[ni][k] = seg_data[lf][l];
-            ++k;
-            ++l;
-        }
-        while(r < m) {
-            seg_data_lf[ni][k] = l - 1;
-            seg_data_ri[ni][k] = r;
-            seg_data[ni][k] = seg_data[ri][r];
-            ++r;
-            ++k;
-        }
+        while(l < n)
+            seg_data[ni][k++] = {seg_data[lf][l].first, {l++, r - 1}};
+        while(r < m)
+            seg_data[ni][k++] = {seg_data[ri][r].first, {l - 1, r++}};
     }
 
     void init(vector<int> & nums, int ni, int lx, int rx)
     {
         if(rx - lx == 1)
         {
-            if(lx < sz(nums))
-                seg_data[ni] = {nums[lx]};
+            if(lx < (int)nums.size())
+                seg_data[ni] = {{nums[lx], {-1, -1}}};
             return;
         }
 
-        int mid = lx + (rx - lx) / 2;
-        init(nums, 2 * ni + 1, lx, mid);
-        init(nums, 2 * ni + 2, mid, rx);
+        int mid = (lx + rx) >> 1;
+        init(nums, (ni << 1) + 1, lx, mid);
+        init(nums, (ni << 1) + 2, mid, rx);
 
-        merge(ni, 2 * ni + 1, 2 * ni + 2);
+        merge(ni, (ni << 1) + 1, (ni << 1) + 2);
     }
     void init(vector<int> & nums)
     {
@@ -95,20 +62,19 @@ struct MergeSortTree
         if(lx >= r || rx <= l)
             return 0;
 
-        int mid = lx + (rx - lx) / 2;
+        int mid = (lx + rx) >> 1;
 
-        int ans = less_equal(l, r, 2 * ni + 1, lx, mid, seg_data_lf[ni][pos]);
-        ans += less_equal(l, r, 2 * ni + 2, mid, rx, seg_data_ri[ni][pos]);
+        int ans = less_equal(l, r, (ni << 1) + 1, lx, mid, seg_data[ni][pos].second.first);
+        ans += less_equal(l, r, (ni << 1) + 2, mid, rx, seg_data[ni][pos].second.second);
 
         return ans;
     }
-
 
     // any query is zero indexed range and get the answer from l to r-1, i.e [l,r)
 
     int less_equal(int l, int r, int x)
     {
-        auto it = upper_bound(seg_data[0].begin(), seg_data[0].end(), x);
+        auto it = upper_bound(seg_data[0].begin(), seg_data[0].end(), make_pair(x, make_pair(tree_size, tree_size)));
         int ans = 0;
         if(it != seg_data[0].begin()) {
             --it;
