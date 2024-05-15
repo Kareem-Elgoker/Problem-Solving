@@ -1,0 +1,95 @@
+struct PST
+{
+    const int LOG = 32;
+    const int queries = 2e5 + 5;
+    vector<int> nodes,left, right, versions;
+    int curr_id, tree_size, neutral;
+
+    PST(int n)
+    {
+        curr_id = 0;
+        neutral = 0; // change this
+        tree_size = n;
+        nodes.resize(tree_size * LOG);
+        left.resize(tree_size * LOG);
+        right.resize(tree_size * LOG);
+        versions.reserve(queries);
+    }
+
+    // change this
+    int merge(int lf, int ri)
+    {
+        return lf + ri;
+    }
+
+    int init(vector<int> &arr, int lx, int rx)
+    {
+        int id = curr_id++;
+        if(rx - lx == 1)
+        {
+            nodes[id] = arr[lx];
+            return id;
+        }
+
+        int mid = (lx + rx) >> 1;
+
+        left[id] = init(arr, lx, mid);
+        right[id] = init(arr, mid, rx);
+        nodes[id] = merge(nodes[left[id]], nodes[right[id]]);
+
+        return id;
+    }
+    void init(vector<int> &arr)
+    {
+        versions.push_back(init(arr, 0, tree_size));
+    }
+
+    int set(int l, int r, int val, int ni, int lx, int rx)
+    {
+        if(lx >= r || rx <= l)
+            return ni;
+
+        int id = curr_id++;
+
+        if(lx >= l && rx <= r)
+        {
+            nodes[id] = val;
+            return id;
+        }
+
+        int mid = (lx + rx) >> 1;
+
+        left[id] = set(l, r, val, left[ni], lx, mid);
+        right[id] = set(l, r, val, right[ni], mid, rx);
+
+        nodes[id] = merge(nodes[left[id]], nodes[right[id]]);
+
+        return id;
+    }
+    void set(int idx, int val, int version = -1) // 0-indexed, and the versions are from 0 also
+    {
+        if(version == -1)
+            versions.push_back(set(idx, idx + 1, val, versions.back(), 0, tree_size));
+        else
+            versions.push_back(set(idx, idx + 1, val, versions[version], 0, tree_size));
+    }
+
+    int get(int l, int r, int ni, int lx, int rx)
+    {
+        if(lx >= r || rx <= l)
+            return neutral;
+        if(lx >= l && rx <= r)
+            return nodes[ni];
+
+        int mid = (lx + rx) >> 1;
+
+        return merge(get(l, r, left[ni], lx, mid), get(l, r, right[ni], mid, rx));
+    }
+    int get(int l, int r, int version = -1)// r not included in the query, 0-indexed
+    {
+        if(version == -1)
+            return get(l, r, versions.back(), 0, tree_size);
+        else
+            return get(l, r, versions[version], 0, tree_size);
+    }
+};
