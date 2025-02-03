@@ -1,0 +1,78 @@
+mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+struct treap {
+    treap * left;
+    treap * right;
+    int p, sz, val, rev;
+
+    treap(int v) {
+        left = right = NULL;
+        p = rng();
+        sz = 1;
+        rev = 0;
+        val = v;
+    }
+};
+
+int size(treap *tp) {
+    return tp == NULL ? 0 : tp->sz;
+}
+
+treap * recalc(treap * tp) {
+    tp->sz = size(tp->left) + size(tp->right);
+    return tp;
+}
+
+void prop(treap * tp) {
+    if(!tp->rev) return;
+    swap(tp->left, tp->right);
+    if(tp->left != NULL) tp->left->rev ^= 1;
+    if(tp->right != NULL) tp->right->rev ^= 1;
+    tp->rev = 0;
+}
+
+array<treap *, 2> split(treap * tp, int idx) { // 1-indexed
+    if(tp == NULL) return {NULL, NULL};
+    prop(tp);
+
+    if(size(tp->left) >= idx) {
+        auto [l, r] = split(tp->left, idx);
+        tp->left = r;
+        return {l, recalc(tp)};
+    }
+
+    auto [l, r] = split(tp->right, idx - size(tp->left) - 1);
+    tp->right = l;
+
+    return {recalc(tp), r};
+}
+
+treap * merge(treap * l, treap * r) {
+    if(l == NULL) return r;
+    if(r == NULL) return l;
+    prop(l), prop(r);
+
+    if(l->p < r->p) {
+        l->right = merge(l->right, r);
+        return recalc(l);
+    }
+
+    r->left = merge(l, r->left);
+    return recalc(r);
+}
+
+treap * apply_reverse(treap * tp, int l, int r) { // 1-indexed
+    auto [a, b] = split(tp, r);
+    auto [c, d] = split(a, l - 1);
+    d->rev ^= 1;
+    return merge(merge(c, d), b);
+}
+
+int get_val(treap *tp, int idx) { // 1-indexed
+    auto [a, b] = split(tp, idx);
+    auto [c, d] = split(a, idx - 1);
+    
+    int value = d->val;
+    merge(merge(c, d), b);
+    
+    return value;
+}
