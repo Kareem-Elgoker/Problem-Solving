@@ -80,7 +80,8 @@ int get_val(treap *tp, int idx) { // 1-indexed
 
 void dfs_inorder(treap * tp) {
     if(tp == NULL) return;
-
+    prop(tp);
+    
     dfs_inorder(tp->left);
     cout << tp->val << " ";
     dfs_inorder(tp->right);
