@@ -2,7 +2,8 @@ mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
 struct treap {
     treap * left;
     treap * right;
-    int p, sz, val, rev;
+    long long p;
+    int sz, val, rev;
 
     treap(int v) {
         left = right = NULL;
@@ -18,7 +19,7 @@ int size(treap *tp) {
 }
 
 treap * recalc(treap * tp) {
-    tp->sz = size(tp->left) + size(tp->right);
+    tp->sz = size(tp->left) + size(tp->right) + 1;
     return tp;
 }
 
@@ -70,9 +71,17 @@ treap * apply_reverse(treap * tp, int l, int r) { // 1-indexed
 int get_val(treap *tp, int idx) { // 1-indexed
     auto [a, b] = split(tp, idx);
     auto [c, d] = split(a, idx - 1);
-    
+
     int value = d->val;
     merge(merge(c, d), b);
-    
+
     return value;
+}
+
+void dfs_inorder(treap * tp) {
+    if(tp == NULL) return;
+
+    dfs_inorder(tp->left);
+    cout << tp->val << " ";
+    dfs_inorder(tp->right);
 }
