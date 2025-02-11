@@ -73,7 +73,7 @@ int get_val(treap *tp, int idx) { // 1-indexed
     auto [c, d] = split(a, idx - 1);
 
     int value = d->val;
-    merge(merge(c, d), b);
+    tp = merge(merge(c, d), b);
 
     return value;
 }
